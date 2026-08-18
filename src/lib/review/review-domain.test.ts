@@ -113,3 +113,32 @@ test("parses FEN string into board piece positions correctly", () => {
   assert.equal(pieceMap["e8"].color, "b");
   assert.equal(pieceMap["e4"], undefined);
 });
+
+import { analyzePgnToReviewGame, parseChessComUrl } from "./chesscom-api";
+
+test("parses Chess.com game URLs accurately", () => {
+  const parsed1 = parseChessComUrl("https://www.chess.com/game/live/108573212879");
+  assert.deepEqual(parsed1, { type: "live", id: "108573212879" });
+
+  const parsed2 = parseChessComUrl("https://www.chess.com/game/daily/987654321");
+  assert.deepEqual(parsed2, { type: "daily", id: "987654321" });
+
+  const parsed3 = parseChessComUrl("invalid-link");
+  assert.equal(parsed3, null);
+});
+
+test("analyzes raw PGN into ReviewGameSeed with classifications and eval scores", () => {
+  const samplePgn = "1. e4 e5 2. Nf3 Nc6 3. Bc4 Nd4 4. Nxe5 Qg5 5. Nxf7 Qxg2 6. Rf1 Qxe4+ 7. Be2 Nf3#";
+  const analyzedGame = analyzePgnToReviewGame(samplePgn, {
+    title: "Analyzed Test Game",
+    white: "Player 1",
+    black: "Player 2",
+  });
+
+  assert.equal(analyzedGame.moves.length, 14);
+  assert.equal(analyzedGame.moves[0].san, "e4");
+  assert.equal(analyzedGame.moves.at(-1)?.san, "Nf3#");
+  assert.equal(analyzedGame.moves.at(-1)?.isMate, true);
+  assert.ok(analyzedGame.moves[0].evalScore !== undefined);
+});
+

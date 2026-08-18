@@ -243,6 +243,18 @@ export const REVIEW_TIMELINES_MAP: Record<string, ReviewTimeline> = Object.fromE
 
 export const reviewTimeline = REVIEW_TIMELINES_MAP[DEFAULT_GAME_ID];
 
+export function registerCustomGame(gameSeed: ReviewGameSeed): ReviewTimeline {
+  GAMES_MAP[gameSeed.id] = gameSeed;
+  const timeline = buildReviewTimeline(gameSeed);
+  REVIEW_TIMELINES_MAP[gameSeed.id] = timeline;
+
+  if (!ALL_GAMES.some((g) => g.id === gameSeed.id)) {
+    ALL_GAMES.unshift(gameSeed);
+  }
+
+  return timeline;
+}
+
 export function getGameTimeline(gameId?: string | null): ReviewTimeline {
   if (!gameId || !(gameId in REVIEW_TIMELINES_MAP)) {
     return REVIEW_TIMELINES_MAP[DEFAULT_GAME_ID];
