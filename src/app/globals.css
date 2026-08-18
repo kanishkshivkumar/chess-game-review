@@ -325,11 +325,14 @@ a {
 .chess-piece {
   position: relative;
   z-index: 1;
-  width: 78%;
-  height: 78%;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.22));
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.28));
   user-select: none;
+  pointer-events: none;
 }
+
 
 .board-card__controls {
   display: grid;
