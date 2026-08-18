@@ -170,10 +170,20 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
 
   useEffect(() => {
     if (activeMoveRef.current) {
-      activeMoveRef.current.scrollIntoView({
-        block: "nearest",
-        behavior: "smooth",
-      });
+      const el = activeMoveRef.current;
+      const container = el.closest(".move-list");
+      if (container instanceof HTMLElement) {
+        const elTop = el.offsetTop;
+        const elHeight = el.offsetHeight;
+        const containerTop = container.scrollTop;
+        const containerHeight = container.clientHeight;
+
+        if (elTop < containerTop) {
+          container.scrollTop = elTop;
+        } else if (elTop + elHeight > containerTop + containerHeight) {
+          container.scrollTop = elTop + elHeight - containerHeight;
+        }
+      }
     }
   }, [selectedPly, selectedGameId]);
 
