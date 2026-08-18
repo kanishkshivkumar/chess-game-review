@@ -121,11 +121,18 @@ test("parses Chess.com game URLs accurately", () => {
   assert.deepEqual(parsed1, { type: "live", id: "108573212879" });
 
   const parsed2 = parseChessComUrl("https://www.chess.com/game/daily/987654321");
-  assert.deepEqual(parsed2, { type: "daily", id: "987654321" });
+  assert.deepEqual(parsed2, { type: "live", id: "987654321" });
 
-  const parsed3 = parseChessComUrl("invalid-link");
-  assert.equal(parsed3, null);
+  const parsed3 = parseChessComUrl("https://www.chess.com/analysis/game/live/97872578329");
+  assert.deepEqual(parsed3, { type: "live", id: "97872578329" });
+
+  const parsed4 = parseChessComUrl("97872578329");
+  assert.deepEqual(parsed4, { type: "live", id: "97872578329" });
+
+  const parsed5 = parseChessComUrl("invalid-link");
+  assert.equal(parsed5, null);
 });
+
 
 test("analyzes raw PGN into ReviewGameSeed with classifications and eval scores", () => {
   const samplePgn = "1. e4 e5 2. Nf3 Nc6 3. Bc4 Nd4 4. Nxe5 Qg5 5. Nxf7 Qxg2 6. Rf1 Qxe4+ 7. Be2 Nf3#";

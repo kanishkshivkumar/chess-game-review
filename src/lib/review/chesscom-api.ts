@@ -12,56 +12,43 @@ export interface ChessComGameData {
 
 export function parseChessComUrl(input: string): { type: "live" | "daily"; id: string } | null {
   const trimmed = input.trim();
-  const match = trimmed.match(/chess\.com\/(?:analysis\/)?game\/(live|daily)\/(\d+)/i);
-  if (match) {
-    return {
-      type: match[1].toLowerCase() as "live" | "daily",
-      id: match[2],
-    };
-  }
-  const plainIdMatch = trimmed.match(/^(\d{8,12})$/);
-  if (plainIdMatch) {
-    return { type: "live", id: plainIdMatch[1] };
+  const idMatch =
+    trimmed.match(/(?:chess\.com\/(?:[^\/]+\/)?(?:game|live)\/(?:live|daily)?\/?|^)(\d{8,12})/i) ||
+    trimmed.match(/(\d{8,12})/);
+
+  if (idMatch) {
+    return { type: "live", id: idMatch[1] };
   }
   return null;
 }
 
 export async function fetchChessComGame(urlOrId: string): Promise<ChessComGameData> {
-  const parsed = parseChessComUrl(urlOrId);
-  if (!parsed) {
-    throw new Error("Invalid Chess.com URL. Please enter a URL like https://www.chess.com/game/live/123456789");
+  const encoded = encodeURIComponent(urlOrId.trim());
+  const res = await fetch(`/api/chesscom?url=${encoded}`);
+
+  if (!res.ok) {
+    let errorMsg = "Could not fetch game from Chess.com.";
+    try {
+      const errJson = await res.json();
+      if (errJson.error) errorMsg = errJson.error;
+    } catch {
+      // fallback
+    }
+    throw new Error(errorMsg);
   }
 
-  const apiUrl = `https://api.chess.com/pub/game/${parsed.type}/${parsed.id}`;
-  const response = await fetch(apiUrl, {
-    headers: {
-      "User-Agent": "BlankSage-Review-Replay/1.0 (contact@blanksage.com)",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Chess.com game not found (Status ${response.status}). Please check the URL or game ID.`);
-  }
-
-  const json = await response.json();
-  if (!json.pgn) {
-    throw new Error("Game PGN not available from Chess.com API.");
-  }
-
+  const json = await res.json();
   return {
-    url: json.url ?? urlOrId,
+    url: json.url,
     pgn: json.pgn,
     white: {
       username: json.white?.username ?? "White",
       rating: json.white?.rating,
-      result: json.white?.result,
     },
     black: {
       username: json.black?.username ?? "Black",
       rating: json.black?.rating,
-      result: json.black?.result,
     },
-    timeClass: json.time_class ?? "live",
   };
 }
 
@@ -104,7 +91,6 @@ export function analyzePgnToReviewGame(
   let currentEval = 0;
 
   history.forEach((moveObj, index) => {
-    const prevFen = sim.fen();
     const result = sim.move(moveObj.san);
     if (!result) return;
 
@@ -113,7 +99,6 @@ export function analyzePgnToReviewGame(
     const isMate = sim.isGameOver() && isCheck;
     const isCapture = Boolean(result.captured);
     const capturedVal = result.captured ? PIECE_VALUES[result.captured] ?? 0 : 0;
-    const pieceVal = PIECE_VALUES[result.piece] ?? 1;
 
     // Calculate heuristic eval delta
     let delta = 0;
@@ -135,18 +120,20 @@ export function analyzePgnToReviewGame(
     }
 
     // Center pawn push bonus
-    if (index < 10 && result.piece === "p" && (result.to === "e4" || result.to === "d4" || result.to === "e5" || result.to === "d5")) {
+    if (
+      index < 10 &&
+      result.piece === "p" &&
+      (result.to === "e4" || result.to === "d4" || result.to === "e5" || result.to === "d5")
+    ) {
       delta += isWhite ? 0.3 : -0.3;
     }
 
     currentEval += delta;
 
-    // Determine move classification
     let classification: MoveClassification = "good";
     let category = "Opening Principle";
     let explanation = "";
 
-    const plyNum = index + 1;
     const moveNum = Math.floor(index / 2) + 1;
     const sideName = isWhite ? whiteName : blackName;
 
