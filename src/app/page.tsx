@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 
 import { GameReviewClient } from "@/components/game-review/game-review-client";
-import { reviewTimeline } from "@/lib/review/demo-game";
 
 function LoadingShell() {
   return (
@@ -18,7 +17,7 @@ function LoadingShell() {
 export default function Page() {
   return (
     <Suspense fallback={<LoadingShell />}>
-      <GameReviewClient timeline={reviewTimeline} />
+      <GameReviewClient />
     </Suspense>
   );
 }
