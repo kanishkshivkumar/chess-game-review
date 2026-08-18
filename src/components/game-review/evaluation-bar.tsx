@@ -10,7 +10,9 @@ export function EvaluationBar({ score = 0, isMate, winningSide }: EvaluationBarP
   let whitePercentage = 50;
   let label = "+0.0";
 
-  if (isMate) {
+  const isCheckmate = isMate || Math.abs(score) >= 90;
+
+  if (isCheckmate) {
     if (winningSide === "white" || score > 0) {
       whitePercentage = 100;
       label = "M1";
@@ -19,7 +21,7 @@ export function EvaluationBar({ score = 0, isMate, winningSide }: EvaluationBarP
       label = "-M1";
     }
   } else {
-    // Sigmoid or clamped linear mapping from pawn score (-10 to +10) to 0% - 100%
+    // Clamped mapping from pawn score (-10.0 to +10.0) to 5% - 95% range
     const clampedScore = Math.max(-10, Math.min(10, score));
     whitePercentage = Math.round(50 + (clampedScore / 10) * 45);
 
