@@ -91,7 +91,11 @@ export function analyzePgnToReviewGame(
   let currentEval = 0;
 
   history.forEach((moveObj, index) => {
-    const result = sim.move(moveObj.san);
+    const result = sim.move({
+      from: moveObj.from,
+      to: moveObj.to,
+      promotion: moveObj.promotion,
+    });
     if (!result) return;
 
     const isWhite = index % 2 === 0;

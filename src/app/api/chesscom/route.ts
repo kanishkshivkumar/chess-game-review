@@ -1,65 +1,18 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { Chess } from "chess.js";
 
-const TCN_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789{-";
-
-function decodeTcnSquare(char: string): string | null {
-  const index = TCN_CHARS.indexOf(char);
-  if (index === -1) return null;
-  const file = String.fromCharCode(97 + (index % 8));
-  const rank = Math.floor(index / 8) + 1;
-  return `${file}${rank}`;
-}
-
-function decodeTcnToPgn(tcn: string, headers: Record<string, string>): string {
-  const chess = new Chess();
-
-  // Set headers
-  for (const [key, value] of Object.entries(headers)) {
-    if (value && typeof value === "string") {
-      try {
-        chess.header(key, value);
-      } catch {
-        // ignore invalid header key
-      }
-    }
+async function fetchJson(url: string) {
+  const res = await fetch(url, {
+    headers: {
+      "User-Agent": "BlankSage-Review-Replay/1.0 (contact@blanksage.com)",
+      Accept: "application/json",
+    },
+    next: { revalidate: 3600 }, // Cache archives for 1 hr
+  });
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} for ${url}`);
   }
-
-  let i = 0;
-  while (i < tcn.length) {
-    const char1 = tcn[i];
-    const char2 = tcn[i + 1];
-
-    if (!char1 || !char2) break;
-
-    const from = decodeTcnSquare(char1);
-    const to = decodeTcnSquare(char2);
-
-    if (from && to) {
-      let promotion: string | undefined = undefined;
-      const nextChar = tcn[i + 2];
-      if (nextChar === "q" || nextChar === "r" || nextChar === "b" || nextChar === "n") {
-        promotion = nextChar;
-        i += 1;
-      }
-
-      try {
-        const move = chess.move({ from, to, promotion });
-        if (!move) {
-          i += 1;
-          continue;
-        }
-      } catch {
-        i += 1;
-        continue;
-      }
-      i += 2;
-    } else {
-      i += 1;
-    }
-  }
-
-  return chess.pgn();
+  return res.json();
 }
 
 export async function GET(request: NextRequest) {
@@ -70,15 +23,35 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing game URL or ID." }, { status: 400 });
   }
 
-  // Extract ID from any Chess.com URL
   const trimmed = rawInput.trim();
+
+  // If user pasted a full raw PGN directly into input
+  if (trimmed.startsWith("[Event ") || trimmed.includes("1. e4") || trimmed.includes("1. d4")) {
+    const chess = new Chess();
+    try {
+      chess.loadPgn(trimmed);
+      const headerMap = chess.header();
+      return NextResponse.json({
+        id: `custom-${Date.now()}`,
+        url: "",
+        pgn: trimmed,
+        white: { username: headerMap["White"] || "White" },
+        black: { username: headerMap["Black"] || "Black" },
+        result: headerMap["Result"] || "*",
+      });
+    } catch {
+      // Continue URL parsing if PGN load fails
+    }
+  }
+
+  // Extract numeric Game ID
   const idMatch =
     trimmed.match(/(?:chess\.com\/(?:[^\/]+\/)?(?:game|live)\/(?:live|daily)?\/?|^)(\d{8,12})/i) ||
     trimmed.match(/(\d{8,12})/);
 
   if (!idMatch) {
     return NextResponse.json(
-      { error: "Could not parse a valid 8-12 digit Chess.com Game ID from the link." },
+      { error: "Could not parse a valid Chess.com Game ID from the link. Please check your link format." },
       { status: 400 },
     );
   }
@@ -89,65 +62,108 @@ export async function GET(request: NextRequest) {
     `https://www.chess.com/callback/daily/game/${gameId}`,
   ];
 
-  let gameJson: any = null;
+  let callbackJson: any = null;
 
   for (const endpoint of endpoints) {
     try {
-      const res = await fetch(endpoint, {
-        headers: {
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-          Accept: "application/json, text/plain, */*",
-        },
-        next: { revalidate: 60 },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data?.game) {
-          gameJson = data.game;
-          break;
-        }
+      callbackJson = await fetchJson(endpoint);
+      if (callbackJson?.game || callbackJson?.players) {
+        break;
       }
     } catch {
       // try next endpoint
     }
   }
 
-  if (!gameJson) {
+  if (!callbackJson) {
     return NextResponse.json(
-      { error: `Could not load Chess.com game #${gameId}. Please make sure the link is a valid completed Chess.com game.` },
-      { status: 444 },
+      { error: `Could not load Chess.com game #${gameId}. Please check that the game URL is correct.` },
+      { status: 404 },
     );
   }
 
-  const headers = gameJson.pgnHeaders || {};
-  const whiteName = headers.White || gameJson.white?.username || "White";
-  const blackName = headers.Black || gameJson.black?.username || "Black";
-  const resultStr = headers.Result || (gameJson.colorOfWinner === "white" ? "1-0" : gameJson.colorOfWinner === "black" ? "0-1" : "1/2-1/2");
+  // Extract players and timestamp from callback metadata
+  const players = callbackJson.players || {};
+  const game = callbackJson.game || {};
+  const headers = game.pgnHeaders || {};
 
-  let pgn = "";
-  if (gameJson.pgn) {
-    pgn = gameJson.pgn;
-  } else if (gameJson.moveList) {
-    pgn = decodeTcnToPgn(gameJson.moveList, {
-      White: whiteName,
-      Black: blackName,
-      Result: resultStr,
-      Event: headers.Event || "Chess.com Game",
+  const whiteUser =
+    players.bottom?.color === "white"
+      ? players.bottom?.username
+      : players.top?.color === "white"
+      ? players.top?.username
+      : players.bottom?.username || headers.White || "white";
+
+  const blackUser =
+    players.bottom?.color === "black"
+      ? players.bottom?.username
+      : players.top?.color === "black"
+      ? players.top?.username
+      : players.top?.username || headers.Black || "black";
+
+  const endTime = game.endTime || Math.floor(Date.now() / 1000);
+  const dateObj = new Date(endTime * 1000);
+  const yyyy = dateObj.getUTCFullYear();
+  const mm = String(dateObj.getUTCMonth() + 1).padStart(2, "0");
+
+  // Attempt 1: Fetch exact PGN from official Chess.com player monthly archive API
+  if (whiteUser) {
+    try {
+      const archiveUrl = `https://api.chess.com/pub/player/${whiteUser.toLowerCase()}/games/${yyyy}/${mm}`;
+      const archiveData = await fetchJson(archiveUrl);
+      const matchedGame = archiveData.games?.find((g: any) => g.url && g.url.includes(String(gameId)));
+
+      if (matchedGame && matchedGame.pgn) {
+        return NextResponse.json({
+          id: String(gameId),
+          url: matchedGame.url || `https://www.chess.com/game/live/${gameId}`,
+          pgn: matchedGame.pgn,
+          white: { username: matchedGame.white?.username || whiteUser, rating: matchedGame.white?.rating },
+          black: { username: matchedGame.black?.username || blackUser, rating: matchedGame.black?.rating },
+          result: matchedGame.white?.result === "win" ? "1-0" : matchedGame.black?.result === "win" ? "0-1" : "1/2-1/2",
+        });
+      }
+    } catch {
+      // Archive fallback
+    }
+  }
+
+  // Attempt 2: If archive search for White user failed, try Black user's archive
+  if (blackUser) {
+    try {
+      const archiveUrl = `https://api.chess.com/pub/player/${blackUser.toLowerCase()}/games/${yyyy}/${mm}`;
+      const archiveData = await fetchJson(archiveUrl);
+      const matchedGame = archiveData.games?.find((g: any) => g.url && g.url.includes(String(gameId)));
+
+      if (matchedGame && matchedGame.pgn) {
+        return NextResponse.json({
+          id: String(gameId),
+          url: matchedGame.url || `https://www.chess.com/game/live/${gameId}`,
+          pgn: matchedGame.pgn,
+          white: { username: matchedGame.white?.username || whiteUser, rating: matchedGame.white?.rating },
+          black: { username: matchedGame.black?.username || blackUser, rating: matchedGame.black?.rating },
+          result: matchedGame.white?.result === "win" ? "1-0" : matchedGame.black?.result === "win" ? "0-1" : "1/2-1/2",
+        });
+      }
+    } catch {
+      // Fallthrough
+    }
+  }
+
+  // Attempt 3: If PGN is present in game metadata directly
+  if (game.pgn) {
+    return NextResponse.json({
+      id: String(gameId),
+      url: `https://www.chess.com/game/live/${gameId}`,
+      pgn: game.pgn,
+      white: { username: whiteUser },
+      black: { username: blackUser },
+      result: headers.Result || "*",
     });
   }
 
-  if (!pgn) {
-    return NextResponse.json({ error: "Game moves could not be extracted from Chess.com response." }, { status: 422 });
-  }
-
-  return NextResponse.json({
-    id: String(gameId),
-    url: `https://www.chess.com/game/live/${gameId}`,
-    pgn,
-    white: { username: whiteName, rating: headers.WhiteElo },
-    black: { username: blackName, rating: headers.BlackElo },
-    result: resultStr,
-  });
+  return NextResponse.json(
+    { error: `Could not retrieve original game PGN for game #${gameId}. Please check the URL or paste the game PGN directly.` },
+    { status: 422 },
+  );
 }
