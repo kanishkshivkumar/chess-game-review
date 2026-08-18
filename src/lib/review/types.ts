@@ -47,3 +47,33 @@ export interface ReviewTimeline {
   frames: ReviewFrame[];
   moves: ReviewMove[];
 }
+
+export interface GenericReviewItem {
+  id: string;
+  stepIndex: number;
+  title: string;
+  subtitle: string;
+  classification: MoveClassification | "neutral";
+  classificationTone: "best" | "good" | "inaccuracy" | "mistake" | "blunder" | "neutral";
+  explanation: string;
+  metadata?: Record<string, string>;
+}
+
+export interface ClassificationBreakdown {
+  best: number;
+  good: number;
+  inaccuracy: number;
+  mistake: number;
+  blunder: number;
+  total: number;
+}
+
+export interface GameSummary {
+  whiteBreakdown: ClassificationBreakdown;
+  blackBreakdown: ClassificationBreakdown;
+  accuracyEstimate: {
+    white: number;
+    black: number;
+  };
+}
+

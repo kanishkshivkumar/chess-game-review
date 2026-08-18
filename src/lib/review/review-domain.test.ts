@@ -1,11 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { reviewTimeline } from "./demo-game";
-import { clampPly, goToNextPly, goToPreviousPly, formatPlyLabel } from "./navigation";
+import { ALL_GAMES, DEFAULT_GAME_ID, getGameTimeline, operaGame, reviewTimeline, scholarsMateGame } from "./demo-game";
+import { clampPly, formatPlyLabel, goToNextPly, goToPreviousPly } from "./navigation";
 import { getReviewSnapshot } from "./selectors";
+import { calculateGameSummary, toGenericReviewItem } from "./adapter";
+import { getClassificationLabel, getClassificationSymbol } from "./labels";
+import { getBoardPieceMap } from "./board";
 
-test("builds a synchronized review timeline", () => {
+test("builds a synchronized review timeline for default game", () => {
   assert.equal(reviewTimeline.moves.length, 14);
   assert.equal(reviewTimeline.frames.length, 15);
 
@@ -15,6 +18,26 @@ test("builds a synchronized review timeline", () => {
   assert.equal(finalMove?.ply, 14);
   assert.equal(reviewTimeline.frames[14].lastMove?.from, "d4");
   assert.equal(reviewTimeline.frames[14].lastMove?.to, "f3");
+});
+
+test("builds timelines for all registered games without errors", () => {
+  assert.equal(ALL_GAMES.length, 3);
+
+  const operaTimeline = getGameTimeline("opera-game");
+  assert.equal(operaTimeline.moves.length, 33);
+  assert.equal(operaTimeline.moves.at(-1)?.san, "Rd8#");
+
+  const scholarsTimeline = getGameTimeline("scholars-mate");
+  assert.equal(scholarsTimeline.moves.length, 7);
+  assert.equal(scholarsTimeline.moves.at(-1)?.san, "Qxf7#");
+});
+
+test("handles game timeline lookup fallback for unknown IDs", () => {
+  const defaultTimeline = getGameTimeline(null);
+  assert.equal(defaultTimeline.game.id, DEFAULT_GAME_ID);
+
+  const fallbackTimeline = getGameTimeline("non-existent-game-id");
+  assert.equal(fallbackTimeline.game.id, DEFAULT_GAME_ID);
 });
 
 test("clamps navigation within the review range", () => {
@@ -44,4 +67,48 @@ test("formats ply labels for the navigation shell", () => {
   assert.equal(formatPlyLabel(1), "Move 1.");
   assert.equal(formatPlyLabel(2), "Move 1...");
   assert.equal(formatPlyLabel(7), "Move 4.");
+});
+
+test("adapts chess moves into generic review items for BlankSage review shell", () => {
+  const startItem = toGenericReviewItem(undefined);
+  assert.equal(startItem.id, "start-position");
+  assert.equal(startItem.stepIndex, 0);
+  assert.equal(startItem.classification, "neutral");
+
+  const snapshot = getReviewSnapshot(reviewTimeline, 7);
+  const moveItem = toGenericReviewItem(snapshot.move);
+
+  assert.equal(moveItem.id, "ply-7");
+  assert.equal(moveItem.stepIndex, 7);
+  assert.equal(moveItem.title, "Nxe5");
+  assert.equal(moveItem.classification, "good");
+  assert.equal(moveItem.metadata?.from, "f3");
+  assert.equal(moveItem.metadata?.to, "e5");
+});
+
+test("calculates accuracy estimates and move classification breakdown", () => {
+  const summary = calculateGameSummary(reviewTimeline);
+
+  assert.ok(summary.accuracyEstimate.white > 0);
+  assert.ok(summary.accuracyEstimate.black > 0);
+  assert.equal(summary.whiteBreakdown.total, 7);
+  assert.equal(summary.blackBreakdown.total, 7);
+  assert.equal(summary.whiteBreakdown.best + summary.whiteBreakdown.good + summary.whiteBreakdown.mistake + summary.whiteBreakdown.blunder + summary.whiteBreakdown.inaccuracy, 7);
+});
+
+test("returns non-color classification symbols and descriptive labels", () => {
+  assert.equal(getClassificationSymbol("best"), "✓");
+  assert.equal(getClassificationSymbol("blunder"), "??");
+  assert.equal(getClassificationLabel("mistake"), "Mistake");
+});
+
+test("parses FEN string into board piece positions correctly", () => {
+  const initialFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  const pieceMap = getBoardPieceMap(initialFen);
+
+  assert.equal(pieceMap["e1"].type, "k");
+  assert.equal(pieceMap["e1"].color, "w");
+  assert.equal(pieceMap["e8"].type, "k");
+  assert.equal(pieceMap["e8"].color, "b");
+  assert.equal(pieceMap["e4"], undefined);
 });
