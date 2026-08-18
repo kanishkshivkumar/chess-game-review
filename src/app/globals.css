@@ -1522,83 +1522,76 @@ button:focus-visible,
   outline: none;
 }
 
-@media (max-width: 1040px) {
-  .hero-card,
-  .review-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+@media (max-width: 900px) {
+  .chesscom-shell {
+    width: 100vw;
+    padding: 8px 8px 24px;
   }
 
-  .hero-card__meta {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .move-list-card__hint {
-    text-align: left;
-  }
-
-  .game-select-dropdown {
-    max-width: 100%;
-  }
-}
-
-@media (max-width: 720px) {
-  .app-shell {
-    width: min(100vw - 16px, 1280px);
-    padding: 8px 0 24px;
-  }
-
-  .hero-card,
-  .board-card,
-  .insight-card,
-  .move-list-card,
-  .empty-state {
-    border-radius: 18px;
-    padding: 16px;
-  }
-
-  .hero-card__top-bar {
+  .chesscom-top-bar {
     flex-direction: column;
     align-items: stretch;
-    gap: 12px;
+    gap: 10px;
+    padding: 10px;
   }
 
-  .theme-sound-controls {
+  .chesscom-top-bar__left,
+  .chesscom-top-bar__right {
     justify-content: space-between;
     width: 100%;
   }
 
-  .theme-picker {
+  .chesscom-game-select {
     flex: 1;
-    justify-content: space-around;
+    max-width: 220px;
   }
 
-  .theme-btn {
-    padding: 6px 8px;
-    font-size: 0.76rem;
+  .chesscom-layout {
+    grid-template-columns: 1fr;
+    gap: 14px;
   }
 
-  .hero-card h1 {
-    font-size: 1.8rem;
+  .chesscom-board-column {
+    padding: 10px;
+    border-radius: 6px;
   }
 
-  .board-card__header {
-    flex-direction: row;
-    align-items: center;
+  .board-with-eval {
+    gap: 6px;
+    margin-top: 6px;
   }
 
-  .board-card__progress {
-    min-width: 110px;
+  .eval-bar {
+    width: 14px;
   }
 
-  .board-card__controls {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+  .eval-bar__label {
+    font-size: 0.52rem;
+  }
+
+  .board__rank-label {
+    top: 2px;
+    left: 3px;
+    font-size: 0.58rem;
+  }
+
+  .board__file-label {
+    right: 3px;
+    bottom: 1px;
+    font-size: 0.58rem;
+  }
+
+  .chesscom-controls-bar {
+    padding: 6px;
     gap: 6px;
   }
 
-  .board-card__controls button {
-    padding: 12px 4px;
-    font-size: 0.82rem;
+  .chesscom-controls-bar button {
+    padding: 12px 8px;
+  }
+
+  .ctrl-btn-next {
+    font-size: 0.85rem;
   }
 
   .move-list__row {
@@ -1607,79 +1600,31 @@ button:focus-visible,
   }
 
   .move-chip {
-    padding: 0.55rem 0.65rem;
-    min-height: 44px;
-  }
-
-  .move-chip__san {
-    font-size: 0.88rem;
-  }
-
-  .move-chip__class {
-    font-size: 0.7rem;
-  }
-
-  .move-list {
-    max-height: 380px;
+    padding: 0.5rem 0.6rem;
   }
 }
 
 @media (max-width: 480px) {
-  .app-shell {
-    width: 100vw;
-    padding: 0 0 20px;
+  .chesscom-shell {
+    padding: 4px 0 20px;
   }
 
-  .hero-card,
-  .board-card,
-  .insight-card,
+  .chesscom-top-bar,
+  .chesscom-board-column,
+  .coach-card,
   .move-list-card {
     border-radius: 0;
     border-left: none;
     border-right: none;
-    padding: 14px;
   }
 
-  .hero-card__meta,
-  .insight-card__notes,
-  .summary-accuracies,
-  .summary-breakdown-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
+  .player-bar {
+    padding: 6px 8px;
+    font-size: 0.82rem;
   }
 
-  .board-with-eval {
-    gap: 8px;
-  }
-
-  .eval-bar {
-    width: 16px;
-  }
-
-  .eval-bar__label {
-    font-size: 0.58rem;
-  }
-
-  .board__rank-label {
-    top: 3px;
-    left: 4px;
-    font-size: 0.6rem;
-  }
-
-  .board__file-label {
-    right: 4px;
-    bottom: 2px;
-    font-size: 0.6rem;
-  }
-
-  .board-card__controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .board-card__controls button {
-    padding: 12px 8px;
-    font-size: 0.85rem;
+  .player-avatar {
+    font-size: 1rem;
   }
 }
 
