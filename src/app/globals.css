@@ -921,6 +921,7 @@ button:focus-visible,
   .hero-card,
   .review-grid {
     grid-template-columns: 1fr;
+    gap: 16px;
   }
 
   .hero-card__meta {
@@ -938,8 +939,8 @@ button:focus-visible,
 
 @media (max-width: 720px) {
   .app-shell {
-    width: min(100vw - 20px, 1280px);
-    padding: 10px 0 24px;
+    width: min(100vw - 16px, 1280px);
+    padding: 8px 0 24px;
   }
 
   .hero-card,
@@ -947,8 +948,91 @@ button:focus-visible,
   .insight-card,
   .move-list-card,
   .empty-state {
-    border-radius: 20px;
+    border-radius: 18px;
     padding: 16px;
+  }
+
+  .hero-card__top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .theme-sound-controls {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .theme-picker {
+    flex: 1;
+    justify-content: space-around;
+  }
+
+  .theme-btn {
+    padding: 6px 8px;
+    font-size: 0.76rem;
+  }
+
+  .hero-card h1 {
+    font-size: 1.8rem;
+  }
+
+  .board-card__header {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .board-card__progress {
+    min-width: 110px;
+  }
+
+  .board-card__controls {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .board-card__controls button {
+    padding: 12px 4px;
+    font-size: 0.82rem;
+  }
+
+  .move-list__row {
+    grid-template-columns: 32px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .move-chip {
+    padding: 0.55rem 0.65rem;
+    min-height: 44px;
+  }
+
+  .move-chip__san {
+    font-size: 0.88rem;
+  }
+
+  .move-chip__class {
+    font-size: 0.7rem;
+  }
+
+  .move-list {
+    max-height: 380px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-shell {
+    width: 100vw;
+    padding: 0 0 20px;
+  }
+
+  .hero-card,
+  .board-card,
+  .insight-card,
+  .move-list-card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    padding: 14px;
   }
 
   .hero-card__meta,
@@ -956,33 +1040,41 @@ button:focus-visible,
   .summary-accuracies,
   .summary-breakdown-grid {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
 
-  .board-card__header,
-  .move-list-card__header,
-  .insight-card__header {
-    flex-direction: column;
+  .board-with-eval {
+    gap: 8px;
   }
 
-  .board-card__progress {
-    text-align: left;
+  .eval-bar {
+    width: 16px;
+  }
+
+  .eval-bar__label {
+    font-size: 0.58rem;
+  }
+
+  .board__rank-label {
+    top: 3px;
+    left: 4px;
+    font-size: 0.6rem;
+  }
+
+  .board__file-label {
+    right: 4px;
+    bottom: 2px;
+    font-size: 0.6rem;
   }
 
   .board-card__controls {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
 
-  .move-list__row {
-    grid-template-columns: 36px minmax(0, 1fr);
-  }
-
-  .move-list__number {
-    grid-row: 1 / span 2;
-    align-self: center;
-    padding-top: 0;
-  }
-
-  .move-list__row > .move-chip {
-    grid-column: 2;
+  .board-card__controls button {
+    padding: 12px 8px;
+    font-size: 0.85rem;
   }
 }
+
