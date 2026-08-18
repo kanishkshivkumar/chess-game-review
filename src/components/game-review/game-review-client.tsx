@@ -4,9 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import { ChessPiece } from "./chess-pieces";
+import { EvaluationBar } from "./evaluation-bar";
+import { soundSynth } from "@/lib/review/audio";
 import { ALL_GAMES, DEFAULT_GAME_ID, GAMES_MAP, getGameTimeline } from "@/lib/review/demo-game";
 import { getBoardPieceMap } from "@/lib/review/board";
-import { getClassificationLabel, getClassificationSymbol, getClassificationTone } from "@/lib/review/labels";
+import { getClassificationLabel, getClassificationSymbol } from "@/lib/review/labels";
 import { clampPly, formatPlyLabel, goToNextPly, goToPreviousPly } from "@/lib/review/navigation";
 import { getReviewSnapshot } from "@/lib/review/selectors";
 import { calculateGameSummary, toGenericReviewItem } from "@/lib/review/adapter";
@@ -19,18 +21,16 @@ interface GameReviewClientProps {
 const FILES = ["a", "b", "c", "d", "e", "f", "g", "h"] as const;
 const RANKS = [8, 7, 6, 5, 4, 3, 2, 1] as const;
 
+type AppTheme = "sage" | "classic" | "cyber";
+
 function parsePly(value: string | null): number {
-  if (!value) {
-    return 0;
-  }
+  if (!value) return 0;
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
 function resolveGameId(value: string | null): string {
-  if (value && value in GAMES_MAP) {
-    return value;
-  }
+  if (value && value in GAMES_MAP) return value;
   return DEFAULT_GAME_ID;
 }
 
@@ -48,6 +48,9 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
     clampPly(parsePly(searchParams.get("ply")), totalPlies),
   );
 
+  const [theme, setTheme] = useState<AppTheme>("sage");
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+
   const activeMoveRef = useRef<HTMLButtonElement | null>(null);
 
   const snapshot = getReviewSnapshot(timeline, selectedPly);
@@ -56,9 +59,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
   const pieces = getBoardPieceMap(snapshot.frame.fen);
 
   const syncUrlState = useCallback((gameId: string, ply: number) => {
-    if (typeof window === "undefined") {
-      return;
-    }
+    if (typeof window === "undefined") return;
     const url = new URL(window.location.href);
 
     if (gameId === DEFAULT_GAME_ID) {
@@ -86,7 +87,34 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
     const clamped = clampPly(ply, totalPlies);
     setSelectedPly(clamped);
     syncUrlState(selectedGameId, clamped);
+
+    if (clamped > 0) {
+      const move = timeline.moves[clamped - 1];
+      const isCheck = move?.san.includes("+");
+      const isMate = move?.san.includes("#");
+      const isCapture = move?.san.includes("x");
+      soundSynth.playMoveSound(isCapture, isCheck, isMate);
+    }
   };
+
+  const handleThemeChange = (newTheme: AppTheme) => {
+    setTheme(newTheme);
+    if (typeof document !== "undefined") {
+      document.documentElement.dataset.theme = newTheme;
+    }
+  };
+
+  const toggleMute = () => {
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+    soundSynth.setMuted(nextMuted);
+  };
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.dataset.theme = theme;
+    }
+  }, [theme]);
 
   useEffect(() => {
     const clamped = clampPly(selectedPly, totalPlies);
@@ -170,10 +198,6 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
         <section className="empty-state">
           <p className="eyebrow">BlankSage review replay</p>
           <h1>Nothing to review yet</h1>
-          <p>
-            The app is waiting for a completed game fixture. Select or add a game to `src/lib/review/demo-game.ts`
-            and the replay shell will render it automatically.
-          </p>
         </section>
       </main>
     );
@@ -183,20 +207,61 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
     <main className="app-shell">
       <header className="hero-card">
         <div className="hero-card__intro">
-          <div className="hero-card__game-picker">
-            <span className="eyebrow">Select Game Review</span>
-            <select
-              className="game-select-dropdown"
-              value={selectedGameId}
-              onChange={(e) => handleSelectGame(e.target.value)}
-              aria-label="Select completed chess game to review"
-            >
-              {ALL_GAMES.map((game) => (
-                <option key={game.id} value={game.id}>
-                  {game.title} ({game.white} vs {game.black})
-                </option>
-              ))}
-            </select>
+          <div className="hero-card__top-bar">
+            <div className="hero-card__game-picker">
+              <span className="eyebrow">Select Review Fixture</span>
+              <select
+                className="game-select-dropdown"
+                value={selectedGameId}
+                onChange={(e) => handleSelectGame(e.target.value)}
+                aria-label="Select completed chess game to review"
+              >
+                {ALL_GAMES.map((game) => (
+                  <option key={game.id} value={game.id}>
+                    {game.title} ({game.white} vs {game.black})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="theme-sound-controls">
+              <div className="theme-picker" aria-label="Visual Theme Switcher">
+                <button
+                  type="button"
+                  className={`theme-btn ${theme === "sage" ? "theme-btn--active" : ""}`}
+                  onClick={() => handleThemeChange("sage")}
+                  title="BlankSage Sage Obsidian Theme"
+                >
+                  🌿 Sage
+                </button>
+                <button
+                  type="button"
+                  className={`theme-btn ${theme === "classic" ? "theme-btn--active" : ""}`}
+                  onClick={() => handleThemeChange("classic")}
+                  title="Grandmaster Classic Parchment Theme"
+                >
+                  📜 Classic
+                </button>
+                <button
+                  type="button"
+                  className={`theme-btn ${theme === "cyber" ? "theme-btn--active" : ""}`}
+                  onClick={() => handleThemeChange("cyber")}
+                  title="Midnight Cyber Theme"
+                >
+                  ⚡ Cyber
+                </button>
+              </div>
+
+              <button
+                type="button"
+                className="sound-toggle-btn"
+                onClick={toggleMute}
+                aria-label={isMuted ? "Unmute move sounds" : "Mute move sounds"}
+                title={isMuted ? "Unmute move sounds" : "Mute move sounds"}
+              >
+                {isMuted ? "🔇 Muted" : "🔊 Sound On"}
+              </button>
+            </div>
           </div>
 
           <h1>{timeline.game.title}</h1>
@@ -228,7 +293,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
           <article className="board-card">
             <div className="board-card__header">
               <div>
-                <p className="board-card__title">Board position</p>
+                <p className="board-card__title">Board Position</p>
                 <p className="board-card__subtitle">{formatPlyLabel(snapshot.ply)}</p>
               </div>
               <div className="board-card__progress">
@@ -243,48 +308,56 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
               </div>
             </div>
 
-            <div
-              className="board"
-              aria-label={`Chessboard position at ${formatPlyLabel(snapshot.ply)}`}
-              role="region"
-            >
-              {RANKS.map((rank, rankIndex) =>
-                FILES.map((file, fileIndex) => {
-                  const square = `${file}${rank}`;
-                  const piece = pieces[square];
-                  const isLightSquare = (rankIndex + fileIndex) % 2 === 0;
-                  const isFrom = snapshot.frame.lastMove?.from === square;
-                  const isTo = snapshot.frame.lastMove?.to === square;
+            <div className="board-with-eval">
+              <EvaluationBar
+                score={snapshot.move?.evalScore ?? 0}
+                isMate={snapshot.move?.isMate}
+                winningSide={snapshot.move?.side}
+              />
 
-                  return (
-                    <div
-                      key={square}
-                      className={[
-                        "board__square",
-                        isLightSquare ? "board__square--light" : "board__square--dark",
-                        isFrom ? "board__square--from" : "",
-                        isTo ? "board__square--to" : "",
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                      data-square={square}
-                      aria-label={`${square}${piece ? `, ${piece.color === "w" ? "White" : "Black"} ${piece.type.toUpperCase()}` : ""}`}
-                    >
-                      {fileIndex === 0 ? (
-                        <span className="board__rank-label" aria-hidden="true">
-                          {rank}
-                        </span>
-                      ) : null}
-                      {rankIndex === RANKS.length - 1 ? (
-                        <span className="board__file-label" aria-hidden="true">
-                          {file}
-                        </span>
-                      ) : null}
-                      {piece ? <ChessPiece piece={piece} /> : null}
-                    </div>
-                  );
-                }),
-              )}
+              <div
+                className="board"
+                aria-label={`Chessboard position at ${formatPlyLabel(snapshot.ply)}`}
+                role="region"
+              >
+                {RANKS.map((rank, rankIndex) =>
+                  FILES.map((file, fileIndex) => {
+                    const square = `${file}${rank}`;
+                    const piece = pieces[square];
+                    const isLightSquare = (rankIndex + fileIndex) % 2 === 0;
+                    const isFrom = snapshot.frame.lastMove?.from === square;
+                    const isTo = snapshot.frame.lastMove?.to === square;
+
+                    return (
+                      <div
+                        key={square}
+                        className={[
+                          "board__square",
+                          isLightSquare ? "board__square--light" : "board__square--dark",
+                          isFrom ? "board__square--from" : "",
+                          isTo ? "board__square--to" : "",
+                        ]
+                          .filter(Boolean)
+                          .join(" ")}
+                        data-square={square}
+                        aria-label={`${square}${piece ? `, ${piece.color === "w" ? "White" : "Black"} ${piece.type.toUpperCase()}` : ""}`}
+                      >
+                        {fileIndex === 0 ? (
+                          <span className="board__rank-label" aria-hidden="true">
+                            {rank}
+                          </span>
+                        ) : null}
+                        {rankIndex === RANKS.length - 1 ? (
+                          <span className="board__file-label" aria-hidden="true">
+                            {file}
+                          </span>
+                        ) : null}
+                        {piece ? <ChessPiece piece={piece} /> : null}
+                      </div>
+                    );
+                  }),
+                )}
+              </div>
             </div>
 
             <nav className="board-card__controls" aria-label="Review timeline controls">
@@ -327,7 +400,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
         <aside className="review-grid__sidebar">
           <article className="insight-card" aria-live="polite">
             <div className="insight-card__header">
-              <p className="insight-card__eyebrow">Review Feedback</p>
+              <p className="insight-card__eyebrow">BlankSage AI Feedback</p>
               <span
                 className={`badge badge--${genericReviewItem.classificationTone}`}
                 aria-label={`Classification: ${genericReviewItem.classification}`}
@@ -345,6 +418,13 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
 
             <h2>{genericReviewItem.title}</h2>
             <p className="insight-card__move">{genericReviewItem.subtitle}</p>
+
+            {genericReviewItem.learningCategory ? (
+              <div className="learning-category-tag">
+                {genericReviewItem.learningCategory}
+              </div>
+            ) : null}
+
             <p className="insight-card__explanation">{genericReviewItem.explanation}</p>
 
             {snapshot.ply === 0 ? (
@@ -408,7 +488,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
                   className="start-review-button"
                   onClick={() => handleSelectPly(1)}
                 >
-                  Start Review ▶
+                  Start Replay Review ▶
                 </button>
               </div>
             ) : (

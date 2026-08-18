@@ -28,6 +28,9 @@ export function toGenericReviewItem(move?: ReviewMove): GenericReviewItem {
     classification: move.classification,
     classificationTone: move.classification,
     explanation: move.explanation,
+    evalScore: move.evalScore,
+    isMate: move.isMate,
+    learningCategory: move.learningCategory,
     metadata: {
       from: move.from,
       to: move.to,
@@ -35,6 +38,7 @@ export function toGenericReviewItem(move?: ReviewMove): GenericReviewItem {
       side: move.side,
     },
   };
+
 }
 
 const CLASSIFICATION_WEIGHTS: Record<MoveClassification, number> = {

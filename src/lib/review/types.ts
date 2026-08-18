@@ -11,6 +11,9 @@ export interface ReviewMoveSeed {
   san: string;
   classification: MoveClassification;
   explanation: string;
+  evalScore?: number;
+  isMate?: boolean;
+  learningCategory?: string;
 }
 
 export interface ReviewGameSeed {
@@ -56,8 +59,12 @@ export interface GenericReviewItem {
   classification: MoveClassification | "neutral";
   classificationTone: "best" | "good" | "inaccuracy" | "mistake" | "blunder" | "neutral";
   explanation: string;
+  evalScore?: number;
+  isMate?: boolean;
+  learningCategory?: string;
   metadata?: Record<string, string>;
 }
+
 
 export interface ClassificationBreakdown {
   best: number;
