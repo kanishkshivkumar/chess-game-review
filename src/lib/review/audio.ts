@@ -4,7 +4,10 @@ class SoundSynth {
 
   private init() {
     if (!this.ctx && typeof window !== "undefined") {
-      const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext })
+          .webkitAudioContext;
       if (AudioCtx) {
         this.ctx = new AudioCtx();
       }
@@ -22,6 +25,17 @@ class SoundSynth {
     return this.muted;
   }
 
+  private createNoiseBuffer(): AudioBuffer | null {
+    if (!this.ctx) return null;
+    const bufferSize = Math.floor(this.ctx.sampleRate * 0.04);
+    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+    const output = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      output[i] = Math.random() * 2 - 1;
+    }
+    return buffer;
+  }
+
   public playMoveSound(isCapture = false, isCheck = false, isMate = false) {
     if (this.muted) return;
     try {
@@ -29,63 +43,111 @@ class SoundSynth {
       if (!this.ctx) return;
 
       const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
 
       if (isMate) {
-        // Glorious victory chord
-        const freqs = [523.25, 659.25, 783.99, 1046.5];
-        freqs.forEach((freq, idx) => {
+        // Deep, satisfying victory chord with heavy wooden resonance
+        [130.81, 164.81, 196.0, 261.63].forEach((freq, idx) => {
           if (!this.ctx) return;
-          const subOsc = this.ctx.createOscillator();
-          const subGain = this.ctx.createGain();
-          subOsc.type = "triangle";
-          subOsc.frequency.setValueAtTime(freq, now + idx * 0.06);
-          subGain.gain.setValueAtTime(0.12, now + idx * 0.06);
-          subGain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.4);
-          subOsc.connect(subGain);
-          subGain.connect(this.ctx.destination);
-          subOsc.start(now + idx * 0.06);
-          subOsc.stop(now + idx * 0.06 + 0.45);
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          const filter = this.ctx.createBiquadFilter();
+
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(freq, now + idx * 0.07);
+
+          filter.type = "lowpass";
+          filter.frequency.setValueAtTime(600, now + idx * 0.07);
+
+          gain.gain.setValueAtTime(0.28, now + idx * 0.07);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.07 + 0.5);
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(this.ctx.destination);
+
+          osc.start(now + idx * 0.07);
+          osc.stop(now + idx * 0.07 + 0.55);
         });
         return;
       }
 
-      if (isCheck) {
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(600, now);
-        osc.frequency.exponentialRampToValueAtTime(850, now + 0.08);
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-        osc.start(now);
-        osc.stop(now + 0.12);
-        return;
+      // 1. Chunky Wooden Impact Fundamental Body (Low-frequency thud)
+      const bodyOsc = this.ctx.createOscillator();
+      const bodyGain = this.ctx.createGain();
+      const bodyFilter = this.ctx.createBiquadFilter();
+
+      const startFreq = isCheck ? 210 : isCapture ? 160 : 135;
+      const endFreq = isCheck ? 100 : isCapture ? 65 : 50;
+      const duration = isCapture ? 0.095 : 0.075;
+
+      bodyOsc.type = "triangle";
+      bodyOsc.frequency.setValueAtTime(startFreq, now);
+      bodyOsc.frequency.exponentialRampToValueAtTime(endFreq, now + duration);
+
+      bodyFilter.type = "lowpass";
+      bodyFilter.frequency.setValueAtTime(450, now);
+      bodyFilter.frequency.exponentialRampToValueAtTime(140, now + duration);
+
+      bodyGain.gain.setValueAtTime(isCapture ? 0.45 : 0.35, now);
+      bodyGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+
+      bodyOsc.connect(bodyFilter);
+      bodyFilter.connect(bodyGain);
+      bodyGain.connect(this.ctx.destination);
+
+      bodyOsc.start(now);
+      bodyOsc.stop(now + duration + 0.01);
+
+      // 2. Clunky Tactile Contact Snap (Filtered noise burst)
+      const noiseBuffer = this.createNoiseBuffer();
+      if (noiseBuffer) {
+        const noiseSource = this.ctx.createBufferSource();
+        const noiseFilter = this.ctx.createBiquadFilter();
+        const noiseGain = this.ctx.createGain();
+
+        noiseSource.buffer = noiseBuffer;
+
+        noiseFilter.type = "bandpass";
+        noiseFilter.frequency.setValueAtTime(isCapture ? 850 : 620, now);
+        noiseFilter.Q.setValueAtTime(1.6, now);
+
+        noiseGain.gain.setValueAtTime(isCapture ? 0.28 : 0.2, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.035);
+
+        noiseSource.connect(noiseFilter);
+        noiseFilter.connect(noiseGain);
+        noiseGain.connect(this.ctx.destination);
+
+        noiseSource.start(now);
+        noiseSource.stop(now + 0.04);
       }
 
+      // 3. Double-Clack Impact for Piece Captures
       if (isCapture) {
-        osc.type = "square";
-        osc.frequency.setValueAtTime(280, now);
-        osc.frequency.exponentialRampToValueAtTime(140, now + 0.06);
-        gain.gain.setValueAtTime(0.18, now);
-        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
-        osc.start(now);
-        osc.stop(now + 0.08);
-        return;
-      }
+        const t2 = now + 0.028;
+        const o2 = this.ctx.createOscillator();
+        const g2 = this.ctx.createGain();
+        const f2 = this.ctx.createBiquadFilter();
 
-      // Standard crisp move thud
-      osc.type = "triangle";
-      osc.frequency.setValueAtTime(320, now);
-      osc.frequency.exponentialRampToValueAtTime(180, now + 0.05);
-      gain.gain.setValueAtTime(0.16, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
-      osc.start(now);
-      osc.stop(now + 0.06);
+        o2.type = "triangle";
+        o2.frequency.setValueAtTime(180, t2);
+        o2.frequency.exponentialRampToValueAtTime(75, t2 + 0.055);
+
+        f2.type = "lowpass";
+        f2.frequency.setValueAtTime(500, t2);
+
+        g2.gain.setValueAtTime(0.32, t2);
+        g2.gain.exponentialRampToValueAtTime(0.001, t2 + 0.055);
+
+        o2.connect(f2);
+        f2.connect(g2);
+        g2.connect(this.ctx.destination);
+
+        o2.start(t2);
+        o2.stop(t2 + 0.06);
+      }
     } catch {
-      // AudioContext autostart policy safe fallback
+      // AudioContext fallback
     }
   }
 }
