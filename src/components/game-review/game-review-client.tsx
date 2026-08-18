@@ -5,6 +5,22 @@ import { useSearchParams } from "next/navigation";
 
 import { ChessPiece } from "./chess-pieces";
 import { EvaluationBar } from "./evaluation-bar";
+import {
+  AlertTriangleIcon,
+  BookIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  FastForwardIcon,
+  GraduationCapIcon,
+  LeafIcon,
+  PlayIcon,
+  RewindIcon,
+  ShieldIcon,
+  TrophyIcon,
+  VolumeMutedIcon,
+  VolumeOnIcon,
+  ZapIcon,
+} from "./icons";
 import { soundSynth } from "@/lib/review/audio";
 import { ALL_GAMES, DEFAULT_GAME_ID, GAMES_MAP, getGameTimeline } from "@/lib/review/demo-game";
 import { getBoardPieceMap } from "@/lib/review/board";
@@ -32,6 +48,15 @@ function parsePly(value: string | null): number {
 function resolveGameId(value: string | null): string {
   if (value && value in GAMES_MAP) return value;
   return DEFAULT_GAME_ID;
+}
+
+function getCategoryIcon(category?: string) {
+  if (!category) return null;
+  if (category.includes("Opening")) return <GraduationCapIcon size={14} className="category-icon" />;
+  if (category.includes("Tactical")) return <AlertTriangleIcon size={14} className="category-icon" />;
+  if (category.includes("Defensive")) return <ShieldIcon size={14} className="category-icon" />;
+  if (category.includes("Finishing")) return <TrophyIcon size={14} className="category-icon" />;
+  return null;
 }
 
 export function GameReviewClient({ timeline: propTimeline }: GameReviewClientProps) {
@@ -232,7 +257,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
                   onClick={() => handleThemeChange("sage")}
                   title="BlankSage Sage Obsidian Theme"
                 >
-                  🌿 Sage
+                  <LeafIcon size={13} /> Sage
                 </button>
                 <button
                   type="button"
@@ -240,7 +265,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
                   onClick={() => handleThemeChange("classic")}
                   title="Grandmaster Classic Parchment Theme"
                 >
-                  📜 Classic
+                  <BookIcon size={13} /> Classic
                 </button>
                 <button
                   type="button"
@@ -248,7 +273,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
                   onClick={() => handleThemeChange("cyber")}
                   title="Midnight Cyber Theme"
                 >
-                  ⚡ Cyber
+                  <ZapIcon size={13} /> Cyber
                 </button>
               </div>
 
@@ -259,7 +284,15 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
                 aria-label={isMuted ? "Unmute move sounds" : "Mute move sounds"}
                 title={isMuted ? "Unmute move sounds" : "Mute move sounds"}
               >
-                {isMuted ? "🔇 Muted" : "🔊 Sound On"}
+                {isMuted ? (
+                  <>
+                    <VolumeMutedIcon size={14} /> Muted
+                  </>
+                ) : (
+                  <>
+                    <VolumeOnIcon size={14} /> Sound On
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -367,7 +400,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
                 disabled={snapshot.ply === 0}
                 aria-label="Go to start position (Home)"
               >
-                ⏮ Start
+                <RewindIcon size={14} /> Start
               </button>
               <button
                 type="button"
@@ -375,7 +408,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
                 disabled={!snapshot.canGoPrevious}
                 aria-label="Go to previous move (Left Arrow)"
               >
-                ◀ Previous
+                <ChevronLeftIcon size={14} /> Previous
               </button>
               <button
                 type="button"
@@ -383,7 +416,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
                 disabled={!snapshot.canGoNext}
                 aria-label="Go to next move (Right Arrow)"
               >
-                Next ▶
+                Next <ChevronRightIcon size={14} />
               </button>
               <button
                 type="button"
@@ -391,7 +424,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
                 disabled={snapshot.ply === totalPlies}
                 aria-label="Go to final position (End)"
               >
-                End ⏭
+                End <FastForwardIcon size={14} />
               </button>
             </nav>
           </article>
@@ -421,7 +454,8 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
 
             {genericReviewItem.learningCategory ? (
               <div className="learning-category-tag">
-                {genericReviewItem.learningCategory}
+                {getCategoryIcon(genericReviewItem.learningCategory)}
+                <span>{genericReviewItem.learningCategory}</span>
               </div>
             ) : null}
 
@@ -488,7 +522,8 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
                   className="start-review-button"
                   onClick={() => handleSelectPly(1)}
                 >
-                  Start Replay Review ▶
+                  <span>Start Replay Review</span>
+                  <PlayIcon size={12} />
                 </button>
               </div>
             ) : (

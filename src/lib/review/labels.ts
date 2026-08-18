@@ -9,8 +9,8 @@ const CLASSIFICATION_LABELS: Record<MoveClassification, string> = {
 };
 
 const CLASSIFICATION_SYMBOLS: Record<MoveClassification, string> = {
-  best: "✓",
-  good: "👍",
+  best: "BEST",
+  good: "GOOD",
   inaccuracy: "?!",
   mistake: "?",
   blunder: "??",
@@ -27,4 +27,3 @@ export function getClassificationSymbol(classification: MoveClassification): str
 export function getClassificationTone(classification: MoveClassification): string {
   return classification;
 }
-

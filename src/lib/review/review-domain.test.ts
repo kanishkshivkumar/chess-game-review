@@ -97,10 +97,11 @@ test("calculates accuracy estimates and move classification breakdown", () => {
 });
 
 test("returns non-color classification symbols and descriptive labels", () => {
-  assert.equal(getClassificationSymbol("best"), "✓");
+  assert.equal(getClassificationSymbol("best"), "BEST");
   assert.equal(getClassificationSymbol("blunder"), "??");
   assert.equal(getClassificationLabel("mistake"), "Mistake");
 });
+
 
 test("parses FEN string into board piece positions correctly", () => {
   const initialFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
