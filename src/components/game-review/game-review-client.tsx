@@ -75,6 +75,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
 
   const [theme, setTheme] = useState<AppTheme>("sage");
   const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [sidebarTab, setSidebarTab] = useState<"review" | "moves">("review");
 
   const activeMoveRef = useRef<HTMLButtonElement | null>(null);
 
@@ -197,7 +198,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
         handleSelectPly(goToPreviousPly(selectedPly));
       }
 
-      if (event.key === "ArrowRight") {
+      if (event.key === "ArrowRight" || event.key === " ") {
         event.preventDefault();
         handleSelectPly(goToNextPly(selectedPly, totalPlies));
       }
@@ -229,326 +230,274 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
   }
 
   return (
-    <main className="app-shell">
-      <header className="hero-card">
-        <div className="hero-card__intro">
-          <div className="hero-card__top-bar">
-            <div className="hero-card__game-picker">
-              <span className="eyebrow">Select Review Fixture</span>
-              <select
-                className="game-select-dropdown"
-                value={selectedGameId}
-                onChange={(e) => handleSelectGame(e.target.value)}
-                aria-label="Select completed chess game to review"
-              >
-                {ALL_GAMES.map((game) => (
-                  <option key={game.id} value={game.id}>
-                    {game.title} ({game.white} vs {game.black})
-                  </option>
-                ))}
-              </select>
-            </div>
+    <main className="app-shell chesscom-shell">
+      {/* Top Header Bar */}
+      <header className="chesscom-top-bar">
+        <div className="chesscom-top-bar__left">
+          <a href="/" className="chesscom-logo">
+            <span className="chesscom-logo__badge">CHESS</span>
+            <span className="chesscom-logo__title">Game Review</span>
+          </a>
 
-            <div className="theme-sound-controls">
-              <div className="theme-picker" aria-label="Visual Theme Switcher">
-                <button
-                  type="button"
-                  className={`theme-btn ${theme === "sage" ? "theme-btn--active" : ""}`}
-                  onClick={() => handleThemeChange("sage")}
-                  title="BlankSage Sage Obsidian Theme"
-                >
-                  <LeafIcon size={13} /> Sage
-                </button>
-                <button
-                  type="button"
-                  className={`theme-btn ${theme === "classic" ? "theme-btn--active" : ""}`}
-                  onClick={() => handleThemeChange("classic")}
-                  title="Grandmaster Classic Parchment Theme"
-                >
-                  <BookIcon size={13} /> Classic
-                </button>
-                <button
-                  type="button"
-                  className={`theme-btn ${theme === "cyber" ? "theme-btn--active" : ""}`}
-                  onClick={() => handleThemeChange("cyber")}
-                  title="Midnight Cyber Theme"
-                >
-                  <ZapIcon size={13} /> Cyber
-                </button>
-              </div>
-
-              <button
-                type="button"
-                className="sound-toggle-btn"
-                onClick={toggleMute}
-                aria-label={isMuted ? "Unmute move sounds" : "Mute move sounds"}
-                title={isMuted ? "Unmute move sounds" : "Mute move sounds"}
-              >
-                {isMuted ? (
-                  <>
-                    <VolumeMutedIcon size={14} /> Muted
-                  </>
-                ) : (
-                  <>
-                    <VolumeOnIcon size={14} /> Sound On
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          <h1>{timeline.game.title}</h1>
-          <p className="hero-card__narrative">{timeline.game.narrative}</p>
+          <select
+            className="chesscom-game-select"
+            value={selectedGameId}
+            onChange={(e) => handleSelectGame(e.target.value)}
+            aria-label="Select game to review"
+          >
+            {ALL_GAMES.map((game) => (
+              <option key={game.id} value={game.id}>
+                {game.title} ({game.white} vs {game.black})
+              </option>
+            ))}
+          </select>
         </div>
 
-        <dl className="hero-card__meta" aria-label="Game summary statistics">
-          <div>
-            <dt>White</dt>
-            <dd>{timeline.game.white}</dd>
+        <div className="chesscom-top-bar__right">
+          <div className="theme-picker" aria-label="Visual Theme Switcher">
+            <button
+              type="button"
+              className={`theme-btn ${theme === "sage" ? "theme-btn--active" : ""}`}
+              onClick={() => handleThemeChange("sage")}
+            >
+              <LeafIcon size={12} /> Dark
+            </button>
+            <button
+              type="button"
+              className={`theme-btn ${theme === "classic" ? "theme-btn--active" : ""}`}
+              onClick={() => handleThemeChange("classic")}
+            >
+              <BookIcon size={12} /> Wood
+            </button>
+            <button
+              type="button"
+              className={`theme-btn ${theme === "cyber" ? "theme-btn--active" : ""}`}
+              onClick={() => handleThemeChange("cyber")}
+            >
+              <ZapIcon size={12} /> Cyber
+            </button>
           </div>
-          <div>
-            <dt>Black</dt>
-            <dd>{timeline.game.black}</dd>
-          </div>
-          <div>
-            <dt>Result</dt>
-            <dd>{timeline.game.result}</dd>
-          </div>
-          <div>
-            <dt>Opening</dt>
-            <dd>{timeline.game.opening}</dd>
-          </div>
-        </dl>
+
+          <button
+            type="button"
+            className="sound-toggle-btn"
+            onClick={toggleMute}
+            aria-label={isMuted ? "Unmute move sounds" : "Mute move sounds"}
+          >
+            {isMuted ? <VolumeMutedIcon size={14} /> : <VolumeOnIcon size={14} />}
+          </button>
+        </div>
       </header>
 
-      <section className="review-grid">
-        <div className="review-grid__board-column">
-          <article className="board-card">
-            <div className="board-card__header">
-              <div>
-                <p className="board-card__title">Board Position</p>
-                <p className="board-card__subtitle">{formatPlyLabel(snapshot.ply)}</p>
-              </div>
-              <div className="board-card__progress">
-                <span>
-                  {snapshot.ply} / {snapshot.totalPlies}
-                </span>
-                <progress
-                  value={snapshot.ply}
-                  max={snapshot.totalPlies}
-                  aria-label={`Game replay progress: step ${snapshot.ply} of ${snapshot.totalPlies}`}
-                />
-              </div>
+      {/* Main 2-Column Chess.com Game Review Layout */}
+      <div className="chesscom-layout">
+        {/* LEFT COLUMN: BLACK PLAYER -> BOARD + EVAL -> WHITE PLAYER -> CONTROLS */}
+        <section className="chesscom-board-column">
+          {/* Black Player Bar */}
+          <div className="player-bar player-bar--black">
+            <div className="player-info">
+              <span className="player-avatar player-avatar--black">♟</span>
+              <span className="player-name">{timeline.game.black}</span>
             </div>
-
-            <div className="board-with-eval">
-              <EvaluationBar
-                score={snapshot.move?.evalScore ?? 0}
-                isMate={snapshot.move?.isMate}
-                winningSide={snapshot.move?.side}
-              />
-
-              <div
-                className="board"
-                aria-label={`Chessboard position at ${formatPlyLabel(snapshot.ply)}`}
-                role="region"
-              >
-                {RANKS.map((rank, rankIndex) =>
-                  FILES.map((file, fileIndex) => {
-                    const square = `${file}${rank}`;
-                    const piece = pieces[square];
-                    const isLightSquare = (rankIndex + fileIndex) % 2 === 0;
-                    const isFrom = snapshot.frame.lastMove?.from === square;
-                    const isTo = snapshot.frame.lastMove?.to === square;
-
-                    return (
-                      <div
-                        key={square}
-                        className={[
-                          "board__square",
-                          isLightSquare ? "board__square--light" : "board__square--dark",
-                          isFrom ? "board__square--from" : "",
-                          isTo ? "board__square--to" : "",
-                        ]
-                          .filter(Boolean)
-                          .join(" ")}
-                        data-square={square}
-                        aria-label={`${square}${piece ? `, ${piece.color === "w" ? "White" : "Black"} ${piece.type.toUpperCase()}` : ""}`}
-                      >
-                        {fileIndex === 0 ? (
-                          <span className="board__rank-label" aria-hidden="true">
-                            {rank}
-                          </span>
-                        ) : null}
-                        {rankIndex === RANKS.length - 1 ? (
-                          <span className="board__file-label" aria-hidden="true">
-                            {file}
-                          </span>
-                        ) : null}
-                        {piece ? <ChessPiece piece={piece} /> : null}
-                      </div>
-                    );
-                  }),
-                )}
-              </div>
+            <div className="player-acc">
+              {snapshot.ply > 0 ? <span>Accuracy {gameSummary.accuracyEstimate.black}%</span> : null}
+              {timeline.game.result === "0-1" ? <span className="winner-tag">★ Winner</span> : null}
             </div>
+          </div>
 
-            <nav className="board-card__controls" aria-label="Review timeline controls">
-              <button
-                type="button"
-                onClick={() => handleSelectPly(0)}
-                disabled={snapshot.ply === 0}
-                aria-label="Go to start position (Home)"
-              >
-                <RewindIcon size={14} /> Start
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectPly(goToPreviousPly(selectedPly))}
-                disabled={!snapshot.canGoPrevious}
-                aria-label="Go to previous move (Left Arrow)"
-              >
-                <ChevronLeftIcon size={14} /> Previous
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectPly(goToNextPly(selectedPly, totalPlies))}
-                disabled={!snapshot.canGoNext}
-                aria-label="Go to next move (Right Arrow)"
-              >
-                Next <ChevronRightIcon size={14} />
-              </button>
-              <button
-                type="button"
-                onClick={() => handleSelectPly(totalPlies)}
-                disabled={snapshot.ply === totalPlies}
-                aria-label="Go to final position (End)"
-              >
-                End <FastForwardIcon size={14} />
-              </button>
-            </nav>
-          </article>
-        </div>
+          {/* Board + Eval Bar Container */}
+          <div className="board-with-eval">
+            <EvaluationBar
+              score={snapshot.move?.evalScore ?? 0}
+              isMate={snapshot.move?.isMate}
+              winningSide={snapshot.move?.side}
+            />
 
-        <aside className="review-grid__sidebar">
-          <article className="insight-card" aria-live="polite">
-            <div className="insight-card__header">
-              <p className="insight-card__eyebrow">BlankSage AI Feedback</p>
-              <span
-                className={`badge badge--${genericReviewItem.classificationTone}`}
-                aria-label={`Classification: ${genericReviewItem.classification}`}
-              >
-                {genericReviewItem.classification !== "neutral" ? (
-                  <span className="badge__symbol" aria-hidden="true">
-                    {getClassificationSymbol(genericReviewItem.classification as any)}{" "}
+            <div
+              className="board"
+              aria-label={`Chessboard position at ${formatPlyLabel(snapshot.ply)}`}
+              role="region"
+            >
+              {RANKS.map((rank, rankIndex) =>
+                FILES.map((file, fileIndex) => {
+                  const square = `${file}${rank}`;
+                  const piece = pieces[square];
+                  const isLightSquare = (rankIndex + fileIndex) % 2 === 0;
+                  const isFrom = snapshot.frame.lastMove?.from === square;
+                  const isTo = snapshot.frame.lastMove?.to === square;
+
+                  return (
+                    <div
+                      key={square}
+                      className={[
+                        "board__square",
+                        isLightSquare ? "board__square--light" : "board__square--dark",
+                        isFrom ? "board__square--from" : "",
+                        isTo ? "board__square--to" : "",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      data-square={square}
+                    >
+                      {fileIndex === 0 ? (
+                        <span className="board__rank-label" aria-hidden="true">
+                          {rank}
+                        </span>
+                      ) : null}
+                      {rankIndex === RANKS.length - 1 ? (
+                        <span className="board__file-label" aria-hidden="true">
+                          {file}
+                        </span>
+                      ) : null}
+                      {piece ? <ChessPiece piece={piece} /> : null}
+                    </div>
+                  );
+                }),
+              )}
+            </div>
+          </div>
+
+          {/* White Player Bar */}
+          <div className="player-bar player-bar--white">
+            <div className="player-info">
+              <span className="player-avatar player-avatar--white">♙</span>
+              <span className="player-name">{timeline.game.white}</span>
+            </div>
+            <div className="player-acc">
+              {snapshot.ply > 0 ? <span>Accuracy {gameSummary.accuracyEstimate.white}%</span> : null}
+              {timeline.game.result === "1-0" ? <span className="winner-tag">★ Winner</span> : null}
+            </div>
+          </div>
+
+          {/* Bottom Control Bar */}
+          <nav className="chesscom-controls-bar" aria-label="Chessboard replay controls">
+            <button
+              type="button"
+              onClick={() => handleSelectPly(0)}
+              disabled={snapshot.ply === 0}
+              title="First move (Home)"
+            >
+              <RewindIcon size={16} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectPly(goToPreviousPly(selectedPly))}
+              disabled={!snapshot.canGoPrevious}
+              title="Previous move (Left Arrow)"
+            >
+              <ChevronLeftIcon size={18} />
+            </button>
+
+            <button
+              type="button"
+              className="ctrl-btn-next"
+              onClick={() => handleSelectPly(goToNextPly(selectedPly, totalPlies))}
+              disabled={!snapshot.canGoNext}
+              title="Next move (Right Arrow / Spacebar)"
+            >
+              <span>Next Move</span>
+              <ChevronRightIcon size={18} />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectPly(totalPlies)}
+              disabled={snapshot.ply === totalPlies}
+              title="Last move (End)"
+            >
+              <FastForwardIcon size={16} />
+            </button>
+          </nav>
+        </section>
+
+        {/* RIGHT COLUMN: SIDEBAR WITH REVIEW / MOVES TABS */}
+        <aside className="chesscom-sidebar-column">
+          <div className="sidebar-tabs">
+            <button
+              type="button"
+              className={`sidebar-tab ${sidebarTab === "review" ? "sidebar-tab--active" : ""}`}
+              onClick={() => setSidebarTab("review")}
+            >
+              Coach Review
+            </button>
+            <button
+              type="button"
+              className={`sidebar-tab ${sidebarTab === "moves" ? "sidebar-tab--active" : ""}`}
+              onClick={() => setSidebarTab("moves")}
+            >
+              Move List
+            </button>
+          </div>
+
+          {sidebarTab === "review" ? (
+            <article className="coach-card" aria-live="polite">
+              <div className="coach-card__header">
+                <div className="coach-avatar">🎓</div>
+                <div className="coach-meta">
+                  <span className="coach-meta__title">BlankSage AI Coach</span>
+                  <span className="coach-meta__step">
+                    Move {snapshot.ply} of {snapshot.totalPlies}
                   </span>
-                ) : null}
-                {genericReviewItem.classification !== "neutral"
-                  ? getClassificationLabel(genericReviewItem.classification as any)
-                  : "Start position"}
-              </span>
-            </div>
-
-            <h2>{genericReviewItem.title}</h2>
-            <p className="insight-card__move">{genericReviewItem.subtitle}</p>
-
-            {genericReviewItem.learningCategory ? (
-              <div className="learning-category-tag">
-                {getCategoryIcon(genericReviewItem.learningCategory)}
-                <span>{genericReviewItem.learningCategory}</span>
-              </div>
-            ) : null}
-
-            <p className="insight-card__explanation">{genericReviewItem.explanation}</p>
-
-            {snapshot.ply === 0 ? (
-              <div className="insight-card__summary-panel">
-                <div className="summary-accuracies">
-                  <div className="accuracy-pill">
-                    <span className="accuracy-pill__label">White Accuracy</span>
-                    <span className="accuracy-pill__value">{gameSummary.accuracyEstimate.white}%</span>
-                  </div>
-                  <div className="accuracy-pill">
-                    <span className="accuracy-pill__label">Black Accuracy</span>
-                    <span className="accuracy-pill__value">{gameSummary.accuracyEstimate.black}%</span>
-                  </div>
-                </div>
-
-                <div className="summary-breakdown-grid">
-                  <div className="summary-breakdown-col">
-                    <span className="summary-col-header">White ({timeline.game.white})</span>
-                    <ul className="summary-counts-list">
-                      <li>
-                        <span className="badge-dot badge-dot--best" /> {gameSummary.whiteBreakdown.best} Best
-                      </li>
-                      <li>
-                        <span className="badge-dot badge-dot--good" /> {gameSummary.whiteBreakdown.good} Good
-                      </li>
-                      <li>
-                        <span className="badge-dot badge-dot--inaccuracy" /> {gameSummary.whiteBreakdown.inaccuracy} Inaccuracies
-                      </li>
-                      <li>
-                        <span className="badge-dot badge-dot--mistake" /> {gameSummary.whiteBreakdown.mistake} Mistakes
-                      </li>
-                      <li>
-                        <span className="badge-dot badge-dot--blunder" /> {gameSummary.whiteBreakdown.blunder} Blunders
-                      </li>
-                    </ul>
-                  </div>
-                  <div className="summary-breakdown-col">
-                    <span className="summary-col-header">Black ({timeline.game.black})</span>
-                    <ul className="summary-counts-list">
-                      <li>
-                        <span className="badge-dot badge-dot--best" /> {gameSummary.blackBreakdown.best} Best
-                      </li>
-                      <li>
-                        <span className="badge-dot badge-dot--good" /> {gameSummary.blackBreakdown.good} Good
-                      </li>
-                      <li>
-                        <span className="badge-dot badge-dot--inaccuracy" /> {gameSummary.blackBreakdown.inaccuracy} Inaccuracies
-                      </li>
-                      <li>
-                        <span className="badge-dot badge-dot--mistake" /> {gameSummary.blackBreakdown.mistake} Mistakes
-                      </li>
-                      <li>
-                        <span className="badge-dot badge-dot--blunder" /> {gameSummary.blackBreakdown.blunder} Blunders
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  className="start-review-button"
-                  onClick={() => handleSelectPly(1)}
-                >
-                  <span>Start Replay Review</span>
-                  <PlayIcon size={12} />
-                </button>
-              </div>
-            ) : (
-              <div className="insight-card__notes">
-                <div>
-                  <dt>Side to play</dt>
-                  <dd>{selectedPly % 2 === 0 ? "White" : "Black"}</dd>
-                </div>
-                <div>
-                  <dt>Review step</dt>
-                  <dd>
-                    {snapshot.ply} of {snapshot.totalPlies}
-                  </dd>
                 </div>
               </div>
-            )}
-          </article>
 
-          <article className="move-list-card">
+              <div className="coach-card__banner">
+                <span className={`badge badge--${genericReviewItem.classificationTone}`}>
+                  {genericReviewItem.classification !== "neutral" ? (
+                    <span className="badge__symbol" aria-hidden="true">
+                      {getClassificationSymbol(genericReviewItem.classification as any)}{" "}
+                    </span>
+                  ) : null}
+                  {genericReviewItem.classification !== "neutral"
+                    ? getClassificationLabel(genericReviewItem.classification as any)
+                    : "Start position"}
+                </span>
+              </div>
+
+              <h2 className="coach-card__move-title">{genericReviewItem.title}</h2>
+              <p className="coach-card__subtitle">{genericReviewItem.subtitle}</p>
+
+              {genericReviewItem.learningCategory ? (
+                <div className="learning-category-tag">
+                  {getCategoryIcon(genericReviewItem.learningCategory)}
+                  <span>{genericReviewItem.learningCategory}</span>
+                </div>
+              ) : null}
+
+              <p className="coach-card__explanation">{genericReviewItem.explanation}</p>
+
+              {snapshot.ply === 0 ? (
+                <div className="coach-summary-panel">
+                  <div className="accuracy-box">
+                    <div className="acc-item">
+                      <span className="acc-item__name">White ({timeline.game.white})</span>
+                      <span className="acc-item__val">{gameSummary.accuracyEstimate.white}%</span>
+                    </div>
+                    <div className="acc-item">
+                      <span className="acc-item__name">Black ({timeline.game.black})</span>
+                      <span className="acc-item__val">{gameSummary.accuracyEstimate.black}%</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="start-review-button"
+                    onClick={() => handleSelectPly(1)}
+                  >
+                    <span>Start Replay Review</span>
+                    <PlayIcon size={13} />
+                  </button>
+                </div>
+              ) : null}
+            </article>
+          ) : null}
+
+          {/* Move List Container */}
+          <article className={`move-list-card ${sidebarTab === "moves" ? "move-list-card--full" : ""}`}>
             <div className="move-list-card__header">
-              <div>
-                <p className="move-list-card__eyebrow">Move list</p>
-                <h2>Review sequence</h2>
-              </div>
-              <p className="move-list-card__hint">Click any move or use arrow keys.</p>
+              <h3>Move List</h3>
+              <span className="move-count-badge">{timeline.moves.length} moves</span>
             </div>
 
             <ol className="move-list" aria-label="Move list">
@@ -566,17 +515,12 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
                       ref={isWhiteActive ? activeMoveRef : null}
                       type="button"
                       className={`move-chip ${isWhiteActive ? "move-chip--active" : ""} move-chip--${whiteMove.classification}`}
-                      aria-current={isWhiteActive ? "true" : undefined}
-                      aria-label={`Move ${whiteMove.moveNumber} White: ${whiteMove.san}, ${getClassificationLabel(whiteMove.classification)}`}
                       onClick={() => handleSelectPly(whiteMove.ply)}
                     >
-                      <div className="move-chip__header">
-                        <span className="move-chip__san">{whiteMove.san}</span>
-                        <span className="move-chip__symbol" aria-hidden="true">
-                          {getClassificationSymbol(whiteMove.classification)}
-                        </span>
-                      </div>
-                      <span className="move-chip__class">{getClassificationLabel(whiteMove.classification)}</span>
+                      <span className="move-chip__san">{whiteMove.san}</span>
+                      <span className="move-chip__symbol">
+                        {getClassificationSymbol(whiteMove.classification)}
+                      </span>
                     </button>
 
                     {blackMove ? (
@@ -584,22 +528,15 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
                         ref={isBlackActive ? activeMoveRef : null}
                         type="button"
                         className={`move-chip ${isBlackActive ? "move-chip--active" : ""} move-chip--${blackMove.classification}`}
-                        aria-current={isBlackActive ? "true" : undefined}
-                        aria-label={`Move ${blackMove.moveNumber} Black: ${blackMove.san}, ${getClassificationLabel(blackMove.classification)}`}
                         onClick={() => handleSelectPly(blackMove.ply)}
                       >
-                        <div className="move-chip__header">
-                          <span className="move-chip__san">{blackMove.san}</span>
-                          <span className="move-chip__symbol" aria-hidden="true">
-                            {getClassificationSymbol(blackMove.classification)}
-                          </span>
-                        </div>
-                        <span className="move-chip__class">{getClassificationLabel(blackMove.classification)}</span>
+                        <span className="move-chip__san">{blackMove.san}</span>
+                        <span className="move-chip__symbol">
+                          {getClassificationSymbol(blackMove.classification)}
+                        </span>
                       </button>
                     ) : (
-                      <span className="move-chip move-chip--empty" aria-hidden="true">
-                        —
-                      </span>
+                      <span className="move-chip move-chip--empty">—</span>
                     )}
                   </li>
                 );
@@ -607,7 +544,7 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
             </ol>
           </article>
         </aside>
-      </section>
+      </div>
     </main>
   );
 }

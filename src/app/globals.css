@@ -131,23 +131,322 @@ a {
   background: rgba(52, 211, 153, 0.25);
 }
 
-.app-shell {
-  width: min(1280px, calc(100vw - 32px));
+.chesscom-shell {
+  width: min(1340px, 100vw);
   margin: 0 auto;
-  padding: 24px 0 40px;
+  padding: 12px 16px 30px;
 }
 
-.hero-card,
-.board-card,
-.insight-card,
-.move-list-card,
-.empty-state {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
+.chesscom-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   background: var(--panel);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(20px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
 }
+
+.chesscom-top-bar__left,
+.chesscom-top-bar__right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chesscom-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+}
+
+.chesscom-logo__badge {
+  background: var(--accent);
+  color: #ffffff;
+  font-weight: 900;
+  font-size: 0.72rem;
+  padding: 3px 6px;
+  border-radius: 4px;
+  letter-spacing: 0.05em;
+}
+
+.chesscom-logo__title {
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.chesscom-game-select {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--panel-strong);
+  color: var(--text);
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.chesscom-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(360px, 0.9fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.chesscom-board-column {
+  display: flex;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.player-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  background: var(--panel-strong);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.player-bar--black {
+  margin-bottom: 8px;
+}
+
+.player-bar--white {
+  margin-top: 8px;
+}
+
+.player-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.player-avatar {
+  font-size: 1.2rem;
+}
+
+.player-name {
+  color: var(--text);
+}
+
+.player-acc {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.winner-tag {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.chesscom-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  background: var(--panel-strong);
+  padding: 8px;
+  border-radius: 6px;
+}
+
+.chesscom-controls-bar button {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 10px 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 140ms ease;
+}
+
+.chesscom-controls-bar button:hover:not(:disabled) {
+  background: #383531;
+}
+
+.chesscom-controls-bar button:disabled {
+  opacity: 0.35;
+}
+
+.ctrl-btn-next {
+  flex: 1;
+  background: #81b64c !important;
+  color: #ffffff !important;
+  border: none !important;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.ctrl-btn-next:hover:not(:disabled) {
+  background: #95c260 !important;
+}
+
+.chesscom-sidebar-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sidebar-tabs {
+  display: flex;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.sidebar-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: all 140ms ease;
+}
+
+.sidebar-tab:hover {
+  color: var(--text);
+}
+
+.sidebar-tab--active {
+  background: var(--panel-strong);
+  color: var(--text);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.coach-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.coach-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.coach-avatar {
+  font-size: 1.8rem;
+  background: var(--panel-strong);
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.coach-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.coach-meta__title {
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+
+.coach-meta__step {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.coach-card__banner {
+  margin-top: 4px;
+}
+
+.coach-card__move-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.coach-card__subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.coach-card__explanation {
+  margin: 4px 0 0;
+  line-height: 1.6;
+  color: var(--text);
+  font-size: 0.92rem;
+}
+
+.coach-summary-panel {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.accuracy-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--panel-strong);
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.acc-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.acc-item__val {
+  color: var(--accent);
+  font-weight: 800;
+}
+
+.move-list-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.move-list-card__header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.move-count-badge {
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: var(--panel-strong);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
 
 .hero-card {
   display: grid;
