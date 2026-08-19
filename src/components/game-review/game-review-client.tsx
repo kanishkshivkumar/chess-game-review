@@ -16,7 +16,9 @@ import {
   PlayIcon,
   RewindIcon,
   ShieldIcon,
+  StarIcon,
   TrophyIcon,
+  UserIcon,
   VolumeMutedIcon,
   VolumeOnIcon,
   ZapIcon,
@@ -306,12 +308,18 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
           {/* Black Player Bar */}
           <div className="player-bar player-bar--black">
             <div className="player-info">
-              <span className="player-avatar player-avatar--black">♟</span>
+              <span className="player-avatar player-avatar--black">
+                <UserIcon size={14} />
+              </span>
               <span className="player-name">{timeline.game.black}</span>
             </div>
             <div className="player-acc">
               {snapshot.ply > 0 ? <span>Accuracy {gameSummary.accuracyEstimate.black}%</span> : null}
-              {timeline.game.result === "0-1" ? <span className="winner-tag">★ Winner</span> : null}
+              {timeline.game.result === "0-1" ? (
+                <span className="winner-tag">
+                  <StarIcon size={12} /> Winner
+                </span>
+              ) : null}
             </div>
           </div>
 
@@ -370,12 +378,18 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
           {/* White Player Bar */}
           <div className="player-bar player-bar--white">
             <div className="player-info">
-              <span className="player-avatar player-avatar--white">♙</span>
+              <span className="player-avatar player-avatar--white">
+                <UserIcon size={14} />
+              </span>
               <span className="player-name">{timeline.game.white}</span>
             </div>
             <div className="player-acc">
               {snapshot.ply > 0 ? <span>Accuracy {gameSummary.accuracyEstimate.white}%</span> : null}
-              {timeline.game.result === "1-0" ? <span className="winner-tag">★ Winner</span> : null}
+              {timeline.game.result === "1-0" ? (
+                <span className="winner-tag">
+                  <StarIcon size={12} /> Winner
+                </span>
+              ) : null}
             </div>
           </div>
 
@@ -443,7 +457,9 @@ export function GameReviewClient({ timeline: propTimeline }: GameReviewClientPro
           {sidebarTab === "review" ? (
             <article className="coach-card" aria-live="polite">
               <div className="coach-card__header">
-                <div className="coach-avatar">🎓</div>
+                <div className="coach-avatar">
+                  <GraduationCapIcon size={20} />
+                </div>
                 <div className="coach-meta">
                   <span className="coach-meta__title">BlankSage AI Coach</span>
                   <span className="coach-meta__step">
